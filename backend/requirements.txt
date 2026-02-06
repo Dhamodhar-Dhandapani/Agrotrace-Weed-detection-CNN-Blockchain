@@ -1,0 +1,7 @@
+flask
+flask-sqlalchemy
+flask-cors
+opencv-python
+ultralytics
+qrcode[pil]
+numpy

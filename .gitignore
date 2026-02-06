@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.env
+
+# Flask
+instance/
+.webassets-cache
+
+# Database
+
+*.sqlite3
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dist/
+build/
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+#processed video
+*.mp4
+
+# Project Uploads (Optional: keep if you want sample data, ignore if user data)
+# backend/uploads/*
+# !backend/uploads/.gitkeep

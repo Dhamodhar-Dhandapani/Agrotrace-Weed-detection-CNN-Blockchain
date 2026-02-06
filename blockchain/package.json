@@ -1,0 +1,17 @@
+{
+    "name": "weed-detection-blockchain",
+    "version": "1.0.0",
+    "description": "Blockchain layer for Weed Detection App",
+    "scripts": {
+        "test": "hardhat test",
+        "compile": "hardhat compile",
+        "deploy": "hardhat run scripts/deploy.js"
+    },
+    "devDependencies": {
+        "hardhat": "^2.22.1",
+        "@nomicfoundation/hardhat-toolbox": "^5.0.0"
+    },
+    "dependencies": {
+        "dotenv": "^16.4.5"
+    }
+}
