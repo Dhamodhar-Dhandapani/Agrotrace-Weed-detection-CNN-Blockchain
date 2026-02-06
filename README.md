@@ -33,7 +33,18 @@ Follow these steps to set up the project locally.
 
 ### 1. Backend Setup (Flask API)
 
-Navigate to the project root:
+Open a terminal in the project root.
+
+Activate the virtual environment:
+```bash
+# Windows
+venv\Scripts\activate
+
+# Mac/Linux
+source venv/bin/activate
+```
+
+Navigate to the backend directory:
 ```bash
 cd backend
 ```
