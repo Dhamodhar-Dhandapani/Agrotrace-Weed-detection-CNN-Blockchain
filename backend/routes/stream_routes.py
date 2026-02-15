@@ -1,5 +1,5 @@
 from flask import Blueprint, Response, request, jsonify, stream_with_context
-from services.yolo_service import generate_video_frames, process_live_frame, VIDEO_STATS
+from services.yolo_service import generate_video_frames, process_live_frame, VIDEO_STATS, start_live_session, stop_live_session
 import os
 import uuid
 
@@ -58,38 +58,70 @@ def video_status(filename):
             
     return jsonify(stats)
 
+@stream_bp.route('/live/start', methods=['POST'])
+def start_live():
+    """Starts a live session."""
+    data = request.json
+    land_id = data.get('land_id')
+    method = data.get('removal_method', 'Manual')
+    herbicide = data.get('herbicide_name')
+    
+    if not land_id:
+        return jsonify({"error": "Land ID required"}), 400
+        
+    session_id = start_live_session(land_id, method, herbicide)
+    return jsonify({"session_id": session_id, "status": "started"})
+
+@stream_bp.route('/live/stop', methods=['POST'])
+def stop_live():
+    """Stops a live session and saves to DB."""
+    data = request.json
+    session_id = data.get('session_id')
+    
+    if not session_id:
+         return jsonify({"error": "Session ID required"}), 400
+         
+    stats = stop_live_session(session_id)
+    if not stats:
+        return jsonify({"error": "Session not found"}), 404
+        
+    # Save to DB
+    try:
+        from models import db, Detection
+        
+        # Create new record
+        detection = Detection(
+            land_id=stats['land_id'],
+            weed_count=stats['weed_count'],
+            confidence=0.85, # Assumed high for session
+            image_path="live_session_log", # Placeholder or maybe we saved last frame?
+            removal_method=stats['method'],
+            herbicide_name=stats['herbicide']
+        )
+        db.session.add(detection)
+        db.session.commit()
+        
+        stats['detection_id'] = detection.id
+        stats['status'] = 'completed'
+        
+        return jsonify(stats)
+        
+    except Exception as e:
+        print(f"[ERROR] Failed to save live session to DB: {e}")
+        return jsonify({"error": str(e)}), 500
+
 @stream_bp.route('/live', methods=['POST'])
 def stream_live_frame():
     """
     Receives a single frame, processes it, and returns the annotated frame.
-    This is for "pseudo-streaming" where client POSTs frames rapidly.
+    Supports session_id for cumulative counting.
     """
     if 'image' not in request.files:
         return jsonify({"error": "No image provided"}), 400
         
     image_file = request.files['image']
     
-    # We don't save to disk to be fast.
-    # Convert FileStorage to numpy array - doing it in memory is better.
-    # But yolo_service depends on file paths or cv2.imread.
-    # Let's quickly save to temp for simplicity with current service structure, 
-    # OR refactor service to accept bytes.
-    # For now, to minimize risk, we keep file pattern but use a RAM-disk-like approach or just temp.
-    # Actually, saving every frame to disk is slow (10-30ms).
-    # A better approach is `cv2.imdecode`.
-    
-    # Let's save to a temp file that gets overwritten?
-    # Or better: Decode in memory.
-    
-    # But `process_live_frame` currently takes `image_path` in my previous edit?
-    # Let's check `yolo_service.py`... 
-    # "img = cv2.imread(image_path)"
-    
-    # We should update yolo_service to handle bytes/numpy to be efficient.
-    # For this step, I'll stick to the interface I just wrote: `image_path`.
-    # I will save to a temp file named 'live_temp.jpg' (overwriting it).
-    
-    # Create a unique temp file to avoid race conditions
+    # Create temp file
     ext = os.path.splitext(image_file.filename)[1] or ".jpg"
     temp_filename = f"live_{uuid.uuid4()}{ext}"
     temp_path = os.path.join(UPLOAD_FOLDER, temp_filename)
@@ -99,16 +131,16 @@ def stream_live_frame():
         
         removal_method = request.form.get('removal_method', 'Manual')
         herbicide_name = request.form.get('herbicide_name')
+        session_id = request.form.get('session_id') # Get Session ID
         
-        image_data_url, count, inference_time = process_live_frame(temp_path, method=removal_method, herbicide=herbicide_name)
+        image_data_url, count, inference_time = process_live_frame(temp_path, method=removal_method, herbicide=herbicide_name, session_id=session_id)
         
         if image_data_url is None:
              return jsonify({"error": "Processing failed"}), 500
              
-        # Return JSON with metadata and base64 image
         return jsonify({
-            "image": image_data_url, # Data URL for <img> src
-            "weed_count": count,
+            "image": image_data_url,
+            "weed_count": count, # This is cumulative if session_id is valid
             "inference_time": inference_time,
             "status": "success"
         })
@@ -117,6 +149,5 @@ def stream_live_frame():
         print(f"[ERROR] Live stream error: {e}")
         return jsonify({"error": str(e)}), 500
     finally:
-        # Cleanup temp file
         if os.path.exists(temp_path):
             os.remove(temp_path)

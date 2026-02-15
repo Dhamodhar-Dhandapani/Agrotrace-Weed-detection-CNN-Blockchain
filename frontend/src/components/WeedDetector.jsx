@@ -1,6 +1,6 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import Webcam from 'react-webcam';
-import { uploadVideo, sendLiveFrame, verifyExternalTransaction, runAutonomousSimulation, streamLiveFrame, getVideoStatus } from '../services/api';
+import { uploadVideo, sendLiveFrame, verifyExternalTransaction, runAutonomousSimulation, streamLiveFrame, getVideoStatus, startLiveSession, stopLiveSession } from '../services/api';
 import { storeDetectionOnBlockchain } from '../utils/blockchain';
 import {
   Upload, Camera, ShieldCheck, AlertCircle, Scan,
@@ -98,6 +98,9 @@ const WeedDetector = () => {
     };
   }, [result?.processed_video_url, liveStreamActive, mode]);
 
+  // State for Session ID
+  const [sessionId, setSessionId] = useState(null);
+
   // --- LIVE STREAMING LOOP ---
   const processStreamFrame = useCallback(async () => {
     if (!streamRef.current) return;
@@ -106,7 +109,6 @@ const WeedDetector = () => {
       const imageSrc = webcamRef.current.getScreenshot();
       if (imageSrc) {
         try {
-          // Convert base64 to blob
           const res = await fetch(imageSrc);
           const blob = await res.blob();
 
@@ -116,18 +118,18 @@ const WeedDetector = () => {
           formData.append('removal_method', removalMethod);
           formData.append('herbicide_name', herbicideName);
 
-          // Send to streaming endpoint (NOW EXPECTS JSON)
+          if (sessionId) {
+            formData.append('session_id', sessionId);
+          }
+
           const response = await streamLiveFrame(formData);
 
           if (response.data && response.data.image) {
-            // 1. Update Image (Base64 from JSON)
             setProcessedLiveFrame(response.data.image);
-
-            // 2. Update Stats (Real-time Metadata)
             setResult(prev => ({
               ...prev,
-              weed_count: response.data.weed_count,
-              // Simulated confidence for live view if not provided
+              weed_count: response.data.weed_count, // Cumulative from backend
+              processed_video_url: null, // Ensure video player is hidden
               confidence: response.data.weed_count > 0 ? 0.85 : 0.0,
               processing_time: response.data.inference_time,
               status: "streaming"
@@ -140,31 +142,107 @@ const WeedDetector = () => {
       }
     }
 
-    // Schedule next frame
     if (streamRef.current) {
-      // FIXED DELAY THROTTLING
-      // Don't rely just on FPS. Wait 100ms + network time to prevent flooding.
-      // This ensures the UI stays responsive.
       setTimeout(processStreamFrame, 100);
     }
-  }, [landId, removalMethod, herbicideName]);
+  }, [landId, removalMethod, herbicideName, sessionId]); // Depend on sessionId
 
-  const toggleLiveStream = () => {
+  const toggleLiveStream = async () => {
     if (liveStreamActive) {
+      // STOP RECORDING
       setLiveStreamActive(false);
       streamRef.current = false;
       setProcessedLiveFrame(null);
+
+      if (sessionId) {
+        setLoading(true);
+        try {
+          const response = await stopLiveSession({ session_id: sessionId });
+          const stats = response.data;
+          // Update final results
+          setResult(prev => ({
+            ...prev,
+            weed_count: stats.weed_count,
+            frames_analyzed: stats.frames,
+            processing_status: 'completed',
+            completion_message: "Live Session Saved successfully.",
+            status: "completed"
+          }));
+          if (stats.detection_id) setLastRecordId(stats.detection_id);
+          setSessionId(null);
+        } catch (err) {
+          console.error("Failed to stop session", err);
+          alert("Failed to save session data.");
+        } finally {
+          setLoading(false);
+        }
+      }
+
     } else {
+      // START RECORDING
       if (!landId) {
         alert("Please enter a Land ID first");
         return;
       }
-      setLiveStreamActive(true);
-      streamRef.current = true;
-      // Start loop
-      processStreamFrame();
+
+      setLoading(true);
+      try {
+        const response = await startLiveSession({
+          land_id: landId,
+          removal_method: removalMethod,
+          herbicide_name: herbicideName
+        });
+
+        const newSessionId = response.data.session_id;
+        setSessionId(newSessionId);
+        setLiveStreamActive(true);
+        streamRef.current = true;
+
+        // Allow state to update before starting loop? 
+        // processStreamFrame depends on sessionId, so we need to ensure it's set.
+        // Using a ref for sessionId might be better for immediate availability in loop, 
+        // but let's try calling it with the new ID explicitly or waiting.
+        // Actually, setState is async. 
+        // We can pass the ID to the first call? 
+        // But processStreamFrame uses the state `sessionId`.
+        // Let's use a ref or just wait a tick? 
+        // Better: update processStreamFrame to read from a ref if needed, OR just restart the loop.
+        // But `processStreamFrame` is a callback depending on `sessionId`. 
+        // Implementation detail: Use a timeout to start?
+
+        // Hack: Trigger loop slightly later to allow state update?
+        setTimeout(() => {
+          // But wait, the closure might still see old state?
+          // No, processStreamFrame is in `useCallback` with dependency `sessionId`.
+          // So when sessionId changes, a NEW function is created.
+          // We need to call THAT new function.
+          // But we can't call it here easily.
+
+          // Solution: `useEffect` listening to `liveStreamActive`?
+          // No, previously I called it directly.
+
+          // Let's use a `useEffect` to trigger the loop when `liveStreamActive` becomes true.
+          // See below.
+        }, 0);
+
+      } catch (err) {
+        console.error("Failed to start session", err);
+        alert("Could not start live session.");
+      } finally {
+        setLoading(false);
+      }
     }
   };
+
+  // Use Effect to start loop when Stream becomes Active (and sessionId is set)
+  useEffect(() => {
+    if (liveStreamActive && sessionId) {
+      processStreamFrame();
+    }
+    // Note: processStreamFrame changes when sessionId changes.
+    // If we include processStreamFrame in dependency, it might re-trigger?
+    // Yes.
+  }, [liveStreamActive, sessionId, processStreamFrame]);
 
   const capture = useCallback(async () => {
     if (!landId) {

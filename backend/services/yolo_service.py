@@ -8,6 +8,8 @@ from ultralytics import YOLO
 import cv2
 import os
 import numpy as np
+import uuid
+import time
 
 # --- 1. DEFINE CUSTOM HYBRID ARCHITECTURE ---
 # (Must match the architecture used during training exactly)
@@ -167,7 +169,9 @@ import time
 # ... (existing imports)
 
 # Global stats for video streams
+# Global stats for video streams
 VIDEO_STATS = {}
+LIVE_SESSIONS = {}
 
 def generate_video_frames(video_path, method="Manual", herbicide=None, filename="unknown", detection_id=None):
     """
@@ -281,10 +285,75 @@ def generate_video_frames(video_path, method="Manual", herbicide=None, filename=
     finally:
         cap.release()
 
-def process_live_frame(image_path, method="Manual", herbicide=None):
+# ... (imports)
+
+def calculate_iou(box1, box2):
+    """
+    Calculates Intersection over Union (IoU) between two bounding boxes.
+    Box format: [x1, y1, x2, y2]
+    """
+    x1_a, y1_a, x2_a, y2_a = box1
+    x1_b, y1_b, x2_b, y2_b = box2
+    
+    # Intersection
+    xA = max(x1_a, x1_b)
+    yA = max(y1_a, y1_b)
+    xB = min(x2_a, x2_b)
+    yB = min(y2_a, y2_b)
+    
+    interArea = max(0, xB - xA) * max(0, yB - yA)
+    
+    # Union
+    boxAArea = (x2_a - x1_a) * (y2_a - y1_a)
+    boxBArea = (x2_b - x1_b) * (y2_b - y1_b)
+    
+    iou = interArea / float(boxAArea + boxBArea - interArea) if (boxAArea + boxBArea - interArea) > 0 else 0
+    return iou
+
+def start_live_session(land_id, method, herbicide, detection_id=None):
+    """
+    Initializes a new live session for cumulative counting.
+    """
+    session_id = str(uuid.uuid4())
+    LIVE_SESSIONS[session_id] = {
+        "land_id": land_id,
+        "method": method,
+        "herbicide": herbicide,
+        "start_time": time.time(),
+        
+        # CUSTOM TRACKER STATE
+        "active_tracks": [], # List of {'id': int, 'box': [x1,y1,x2,y2], 'lost': int}
+        "next_track_id": 1,
+        
+        "weed_count": 0,
+        "frame_count": 0,
+        "detection_id": detection_id
+    }
+    print(f"[INFO] Started Live Session: {session_id}")
+    return session_id
+
+def stop_live_session(session_id):
+    """
+    Stops a session and returns final stats.
+    """
+    if session_id in LIVE_SESSIONS:
+        stats = LIVE_SESSIONS.pop(session_id)
+        duration = time.time() - stats["start_time"]
+        return {
+            "weed_count": stats["weed_count"],
+            "duration": duration,
+            "frames": stats["frame_count"],
+            "land_id": stats["land_id"],
+            "method": stats["method"],
+            "herbicide": stats["herbicide"],
+            "detection_id": stats.get("detection_id")
+        }
+    return None
+
+def process_live_frame(image_path, method="Manual", herbicide=None, session_id=None):
     """
     Processes a single frame for live camera feed.
-    Returns: (base64_string, weed_count, inference_time)
+    Uses Custom IoU Tracker for robust counting on HTTP streams.
     """
     load_model()
     try:
@@ -293,27 +362,122 @@ def process_live_frame(image_path, method="Manual", herbicide=None):
         if img is None:
             return None, 0, 0
             
-        # Inference
-        results = model(img, conf=0.15, verbose=False)
-        annotated_frame, count = visualize_frame(img, results, method, herbicide)
+        # Resize for consistent tracking performance
+        img_resized = cv2.resize(img, (640, 480))
+        
+        weed_count = 0
+        current_visible_count = 0
+        
+        # --- DETECTION (Standard) ---
+        # We use predict() instead of track() to ensure we find ALL weeds (High Recall)
+        results = model(img_resized, conf=0.15, verbose=False)
+        
+        detections = [] # List of [x1, y1, x2, y2]
+        if results and results[0].boxes:
+            for box in results[0].boxes:
+                coords = box.xyxy[0].int().cpu().tolist()
+                detections.append(coords)
+        
+        current_visible_count = len(detections)
+        
+        # --- TRACKING LOGIC ---
+        if session_id and session_id in LIVE_SESSIONS:
+            session = LIVE_SESSIONS[session_id]
+            active_tracks = session["active_tracks"]
+            
+            # Match detections to tracks
+            # Simple greedy matching
+            updated_tracks = []
+            matched_detection_indices = set()
+            
+            for track in active_tracks:
+                track_box = track['box']
+                best_iou = 0
+                best_idx = -1
+                
+                for i, det_box in enumerate(detections):
+                    if i in matched_detection_indices:
+                        continue
+                        
+                    iou = calculate_iou(track_box, det_box)
+                    if iou > best_iou:
+                        best_iou = iou
+                        best_idx = i
+                
+                # If matched
+                if best_iou > 0.3: # IoU Threshold
+                    track['box'] = detections[best_idx]
+                    track['lost'] = 0
+                    updated_tracks.append(track)
+                    matched_detection_indices.add(best_idx)
+                else:
+                    # Mark as lost (but keep for grace period)
+                    track['lost'] += 1
+                    if track['lost'] < 5: # Keep for 5 frames
+                        updated_tracks.append(track)
+            
+            # Create new tracks for unmatched detections
+            for i, det_box in enumerate(detections):
+                if i not in matched_detection_indices:
+                    new_track = {
+                        'id': session["next_track_id"],
+                        'box': det_box,
+                        'lost': 0
+                    }
+                    session["next_track_id"] += 1
+                    updated_tracks.append(new_track)
+                    # New unique weed found!
+            
+            # Update Session State
+            session["active_tracks"] = updated_tracks
+            session["weed_count"] = session["next_track_id"] - 1
+            session["frame_count"] += 1
+            weed_count = session["weed_count"]
+            
+            # --- VISUALIZATION ---
+            # Draw tracks manually since we aren't using model.track visualization
+            annotated_frame = img_resized.copy()
+            
+            # Helper to draw boxes
+            for track in updated_tracks:
+                 if track['lost'] == 0:
+                     x1, y1, x2, y2 = track['box']
+                     # Color based on method
+                     color = (0, 0, 255) # Red
+                     if method == "Autonomous": color = (0, 255, 255)
+                     elif method == "Organic": color = (0, 255, 0)
+                     
+                     cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), color, 2)
+                     cv2.putText(annotated_frame, f"ID: {track['id']}", (x1, y1-10), 
+                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+                                 
+            # Overlay Stats
+            cv2.putText(annotated_frame, f"Total Unique: {weed_count}", (10, 30), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+            cv2.putText(annotated_frame, f"Visible: {current_visible_count}", (10, 60), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+
+        else:
+            # Mode 2: Stateless (Just Visuals)
+            annotated_frame, weed_count = visualize_frame(img_resized, results, method, herbicide)
+            weed_count = current_visible_count # Return visible count for stateless
         
         # Calculate inference time
         inference_time = time.time() - start_time
         
-        # Encode to JPEG then Base64
+        # Encode
         ret, buffer = cv2.imencode('.jpg', annotated_frame)
-        if not ret:
-             return None, 0, 0
-             
-        # Convert to base64 string
+        if not ret: return None, 0, 0
         b64_string = base64.b64encode(buffer).decode('utf-8')
         image_data_url = f"data:image/jpeg;base64,{b64_string}"
              
-        return image_data_url, count, inference_time
+        return image_data_url, weed_count, inference_time
         
     except Exception as e:
         print(f"[ERROR] Live frame error: {e}")
         return None, 0, 0
+
+# ... (detect_weeds_in_frame, simulate_autonomous_action, etc. remain)
 
 def detect_weeds_in_frame(image_path, conf=0.15, method="Manual", herbicide=None):
     """

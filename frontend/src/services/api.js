@@ -23,6 +23,9 @@ export const streamLiveFrame = (formData) => api.post('/stream/live', formData, 
     headers: { 'Content-Type': 'multipart/form-data' }
 });
 
+export const startLiveSession = (data) => api.post('/stream/live/start', data);
+export const stopLiveSession = (data) => api.post('/stream/live/stop', data);
+
 export const getVideoStatus = (filename) => api.get(`/stream/video/status/${filename}`);
 
 export const getHistory = (landId) => api.get(`/detect/history/${landId}`);
