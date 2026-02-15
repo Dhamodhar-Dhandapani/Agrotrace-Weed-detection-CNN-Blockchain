@@ -96,16 +96,30 @@ def reset_and_populate():
         # Generate some random history
         for land in all_lands:
             # Add 3-5 detections per land
+            # Add 3-5 detections per land
+            detection_methods = ["YOLOv8-Hybrid", "CNN-Scanning", "Drone-Aerial-View", "Manual-Inspection"]
+            removal_methods = ["Manual Pulling", "Chemical Spray", "Autonomous Laser", "Organic Treatment"]
+
             for i in range(random.randint(3, 5)):
                 tx_hash = "0x" + "".join([random.choice("0123456789abcdef") for _ in range(64)])
                 
+                det_method = random.choice(detection_methods)
+                rem_method = random.choice(removal_methods)
+                herb_name = None
+                
+                if rem_method == "Chemical Spray":
+                     herb_name = random.choice(["Roundup", "Liberty", "2,4-D", "Glyphosate"])
+
                 det = Detection(
                     land_id=land.id,
                     weed_count=random.randint(0, 15),
                     confidence=random.uniform(0.75, 0.99),
                     timestamp=datetime.utcnow() - timedelta(days=random.randint(1, 30)),
                     is_on_chain=False, # generated data is not on real blockchain
-                    tx_hash=None
+                    tx_hash=None,
+                    detection_method=det_method,
+                    removal_method=rem_method,
+                    herbicide_name=herb_name
                 )
                 db.session.add(det)
                 

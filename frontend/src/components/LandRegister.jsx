@@ -3,7 +3,8 @@ import { registerLand, getQr } from '../services/api';
 import {
   Loader2, Sprout, User, CheckCircle2, Copy,
   MapPin, Calendar, Droplets, Hash, Globe,
-  Upload, Scan, ArrowLeft, Download, Share2
+  Upload, Scan, ArrowLeft, Download, Share2,
+  ShieldCheck
 } from 'lucide-react';
 
 const LandRegister = () => {
@@ -258,6 +259,50 @@ const StepTwo = ({ formData, onChange, onBack, loading }) => {
             step="0.1"
             required
           />
+
+          <div className="md:col-span-2 space-y-4 border-t pt-4 mt-2">
+            <label className="text-sm font-semibold text-gray-700 block">
+              Farming Method
+            </label>
+            <div className="flex gap-6">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="farming_method"
+                  value="Conventional"
+                  checked={formData.farming_method !== 'Organic'}
+                  onChange={onChange}
+                  className="w-4 h-4 text-primary-600 focus:ring-primary-500"
+                />
+                <span className="text-gray-700">Conventional Farming</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="farming_method"
+                  value="Organic"
+                  checked={formData.farming_method === 'Organic'}
+                  onChange={onChange}
+                  className="w-4 h-4 text-green-600 focus:ring-green-500"
+                />
+                <span className="text-gray-700">Organic Farming</span>
+              </label>
+            </div>
+
+            {formData.farming_method === 'Organic' && (
+              <div className="animate-fade-in-up">
+                <FormField
+                  label="Organic Certificate Number"
+                  name="organic_certificate_number"
+                  value={formData.organic_certificate_number || ''}
+                  onChange={onChange}
+                  placeholder="Enter valid certificate ID"
+                  icon={<ShieldCheck size={16} />}
+                  required
+                />
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="pt-4 flex gap-4">

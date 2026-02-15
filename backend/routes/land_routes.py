@@ -32,6 +32,8 @@ def register_land():
         water_source=data.get('water_source'),
         planting_date=data.get('planting_date'),
         expected_harvest=data.get('expected_harvest'),
+        farming_method=data.get('farming_method', 'Conventional'),
+        organic_certificate_number=data.get('organic_certificate_number'),
         area_size=data.get('area_size'),
         qr_code_data=qr_str,
         user_id=data.get('user_id')

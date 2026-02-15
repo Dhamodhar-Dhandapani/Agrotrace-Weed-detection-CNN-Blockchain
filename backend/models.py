@@ -32,6 +32,10 @@ class Land(db.Model):
     planting_date = db.Column(db.String(50)) # Keeping as string for simplicity in demo
     expected_harvest = db.Column(db.String(50))
     
+    # New Fields for Farming Method
+    farming_method = db.Column(db.String(50), default='Conventional') # 'Organic' or 'Conventional'
+    organic_certificate_number = db.Column(db.String(100), nullable=True) # Only if Organic
+
     area_size = db.Column(db.Float, nullable=False)
     qr_code_data = db.Column(db.Text, unique=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -54,6 +58,8 @@ class Land(db.Model):
             "water_source": self.water_source,
             "planting_date": self.planting_date,
             "expected_harvest": self.expected_harvest,
+            "farming_method": self.farming_method,
+            "organic_certificate_number": self.organic_certificate_number,
             "area_size": self.area_size,
             "qr_code_data": self.qr_code_data,
             "created_at": self.created_at.isoformat()
@@ -67,9 +73,16 @@ class Detection(db.Model):
     confidence = db.Column(db.Float, default=0.0)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     
+    # Detailed Tracking
+    removal_method = db.Column(db.String(100), nullable=True) # Manual, Chemical, Organic, Autonomous
+    herbicide_name = db.Column(db.String(100), nullable=True) # If applicable
+
     # Blockchain Simulation
     is_on_chain = db.Column(db.Boolean, default=False)
     tx_hash = db.Column(db.String(66), nullable=True) # 0x...
+    
+    detection_method = db.Column(db.String(100), default='YOLOv8-Hybrid') # New field
+
     
     def to_dict(self):
         return {
@@ -78,8 +91,11 @@ class Detection(db.Model):
             "weed_count": self.weed_count,
             "confidence": self.confidence,
             "timestamp": self.timestamp.isoformat(),
+            "removal_method": self.removal_method,
+            "herbicide_name": self.herbicide_name,
             "is_on_chain": self.is_on_chain,
-            "tx_hash": self.tx_hash
+            "tx_hash": self.tx_hash,
+            "detection_method": self.detection_method
         }
 
 class Treatment(db.Model):

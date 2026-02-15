@@ -24,12 +24,14 @@ from routes.land_routes import land_bp
 from routes.detection_routes import detection_bp
 from routes.blockchain_routes import blockchain_bp
 from routes.auth_routes import auth_bp
+from routes.stream_routes import stream_bp
 from services.yolo_service import CustomBackbone, FeatureSelector # CRITICAL for pickle loading
 
 app.register_blueprint(land_bp, url_prefix='/api/land')
 app.register_blueprint(detection_bp, url_prefix='/api/detect')
 app.register_blueprint(blockchain_bp, url_prefix='/api/blockchain')
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
+app.register_blueprint(stream_bp, url_prefix='/api/stream')
 
 @app.route('/')
 def home():

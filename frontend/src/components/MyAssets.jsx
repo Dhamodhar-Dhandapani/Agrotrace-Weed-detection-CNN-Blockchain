@@ -87,7 +87,17 @@ const MyAssets = ({ user }) => {
                                 <div className="space-y-3 pt-4 border-t border-gray-100">
                                     <div className="flex justify-between text-sm">
                                         <span className="text-gray-500">Crop Type</span>
-                                        <span className="font-medium text-gray-900">{asset.crop_type}</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-medium text-gray-900">{asset.crop_type}</span>
+                                            {asset.farming_method && (
+                                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${asset.farming_method === 'Organic'
+                                                        ? 'bg-green-50 text-green-700 border-green-200'
+                                                        : 'bg-blue-50 text-blue-700 border-blue-200'
+                                                    }`}>
+                                                    {asset.farming_method}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                     <div className="flex justify-between text-sm">
                                         <span className="text-gray-500">Area</span>

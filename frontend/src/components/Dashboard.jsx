@@ -226,6 +226,10 @@ const Dashboard = () => {
               {/* Additional Info */}
               <div className="bg-gray-50 rounded-xl p-4">
                 <div className="grid grid-cols-2 gap-4">
+                  <InfoItem label="Farming Method" value={landDetails.farming_method || "Conventional"} />
+                  {landDetails.farming_method === 'Organic' && (
+                    <InfoItem label="Organic Certificate" value={landDetails.organic_certificate_number || "Pending"} />
+                  )}
                   <InfoItem label="Soil Type" value={landDetails.soil_type || "Not specified"} />
                   <InfoItem label="Area Size" value={`${landDetails.area_size || '0'} acres`} />
                 </div>
@@ -470,6 +474,19 @@ const TimelineItem = ({ record, index, onVerify, onViewChain }) => (
               timeStyle: 'short'
             })}
           </p>
+
+          {record.removal_method && (
+            <div className="mt-2 text-xs flex flex-wrap gap-2">
+              <span className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded border border-gray-200">
+                <span className="font-semibold">Method:</span> {record.removal_method}
+              </span>
+              {record.herbicide_name && (
+                <span className="px-2 py-0.5 bg-orange-50 text-orange-700 rounded border border-orange-100">
+                  <span className="font-semibold">Agent:</span> {record.herbicide_name}
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         {record.is_on_chain ? (

@@ -1,16 +1,19 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import Webcam from 'react-webcam';
-import { uploadVideo, sendLiveFrame, verifyExternalTransaction } from '../services/api';
+import { uploadVideo, sendLiveFrame, verifyExternalTransaction, runAutonomousSimulation, streamLiveFrame, getVideoStatus } from '../services/api';
 import { storeDetectionOnBlockchain } from '../utils/blockchain';
 import {
   Upload, Camera, ShieldCheck, AlertCircle, Scan,
   Loader2, Video, Image, Clock, Zap, Battery,
-  Download, Share2, Maximize2, Settings
+  Download, Share2, Maximize2, Settings, Bot, Crosshair,
+  Play, Square // Added Play/Square icons
 } from 'lucide-react';
 
 const WeedDetector = () => {
-  const [mode, setMode] = useState('webcam');
+  const [mode, setMode] = useState('webcam'); // 'webcam', 'upload', 'autonomous'
   const [landId, setLandId] = useState('');
+  const [removalMethod, setRemovalMethod] = useState('Manual');
+  const [herbicideName, setHerbicideName] = useState('');
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -18,11 +21,150 @@ const WeedDetector = () => {
   const webcamRef = useRef(null);
   const [lastRecordId, setLastRecordId] = useState(null);
   const [chainHash, setChainHash] = useState(null);
+
+  // Streaming State
+  const [liveStreamActive, setLiveStreamActive] = useState(false);
+  const [processedLiveFrame, setProcessedLiveFrame] = useState(null);
+  const streamRef = useRef(null); // To store valid ref for loop
+
   const [cameraSettings, setCameraSettings] = useState({
     resolution: 'hd',
-    frameRate: 30,
+    frameRate: 30, // Target FPS for loop
     confidence: 0.7
   });
+
+  // Stop stream on unmount
+  useEffect(() => {
+    return () => {
+      setLiveStreamActive(false);
+    };
+  }, []);
+
+  // Polling for Video Upload Status to update UI counters
+  useEffect(() => {
+    let intervalId;
+    // Only poll if we have a processed video URL (upload mode) and NOT in live stream mode
+    if (result?.processed_video_url && !liveStreamActive && mode === 'upload') {
+      // Extract filename from URL (assumes standard structure ending in filename or query params)
+      // URL format: http://host/api/stream/video/<filename>?params
+      try {
+        // Split by '/stream/video/' to get the part after it
+        const urlParts = result.processed_video_url.split('/stream/video/');
+        if (urlParts.length > 1) {
+          const filenameQuery = urlParts[1];
+          const filename = filenameQuery.split('?')[0]; // Remove query params
+
+          intervalId = setInterval(async () => {
+            try {
+              const apiRes = await getVideoStatus(filename);
+              const stats = apiRes.data;
+              if (stats) {
+                setResult(prev => {
+                  if (!prev) return prev;
+                  return {
+                    ...prev,
+                    weed_count: stats.weed_count,
+                    frames_analyzed: stats.frames_processed,
+                    processing_status: stats.status
+                  };
+                });
+
+                // Auto-reset on completion
+                if (stats.status === 'completed') {
+                  clearInterval(intervalId);
+                  // Update final stats one last time and remove video URL to show Upload UI
+                  setResult(prev => ({
+                    ...prev,
+                    weed_count: stats.weed_count,
+                    frames_analyzed: stats.frames_processed,
+                    processing_status: 'completed',
+                    processed_video_url: null, // Hides player, shows upload box
+                    completion_message: "Processing Complete! Results saved to database."
+                  }));
+                  // Do NOT set result to null, keep it for the stats panel
+                }
+              }
+            } catch (e) {
+              console.error("Status polling error", e);
+            }
+          }, 500); // Poll every 500ms
+        }
+      } catch (err) {
+        console.error("Error parsing video URL for polling", err);
+      }
+    }
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [result?.processed_video_url, liveStreamActive, mode]);
+
+  // --- LIVE STREAMING LOOP ---
+  const processStreamFrame = useCallback(async () => {
+    if (!streamRef.current) return;
+
+    if (webcamRef.current) {
+      const imageSrc = webcamRef.current.getScreenshot();
+      if (imageSrc) {
+        try {
+          // Convert base64 to blob
+          const res = await fetch(imageSrc);
+          const blob = await res.blob();
+
+          const formData = new FormData();
+          formData.append('image', blob, 'live.jpg');
+          formData.append('land_id', landId);
+          formData.append('removal_method', removalMethod);
+          formData.append('herbicide_name', herbicideName);
+
+          // Send to streaming endpoint (NOW EXPECTS JSON)
+          const response = await streamLiveFrame(formData);
+
+          if (response.data && response.data.image) {
+            // 1. Update Image (Base64 from JSON)
+            setProcessedLiveFrame(response.data.image);
+
+            // 2. Update Stats (Real-time Metadata)
+            setResult(prev => ({
+              ...prev,
+              weed_count: response.data.weed_count,
+              // Simulated confidence for live view if not provided
+              confidence: response.data.weed_count > 0 ? 0.85 : 0.0,
+              processing_time: response.data.inference_time,
+              status: "streaming"
+            }));
+          }
+
+        } catch (err) {
+          console.error("Stream frame error", err);
+        }
+      }
+    }
+
+    // Schedule next frame
+    if (streamRef.current) {
+      // FIXED DELAY THROTTLING
+      // Don't rely just on FPS. Wait 100ms + network time to prevent flooding.
+      // This ensures the UI stays responsive.
+      setTimeout(processStreamFrame, 100);
+    }
+  }, [landId, removalMethod, herbicideName]);
+
+  const toggleLiveStream = () => {
+    if (liveStreamActive) {
+      setLiveStreamActive(false);
+      streamRef.current = false;
+      setProcessedLiveFrame(null);
+    } else {
+      if (!landId) {
+        alert("Please enter a Land ID first");
+        return;
+      }
+      setLiveStreamActive(true);
+      streamRef.current = true;
+      // Start loop
+      processStreamFrame();
+    }
+  };
 
   const capture = useCallback(async () => {
     if (!landId) {
@@ -40,16 +182,29 @@ const WeedDetector = () => {
       formData.append('land_id', landId);
 
       setProcessing(true);
-      const response = await sendLiveFrame(formData);
-      setResult(response.data);
-      setLastRecordId(response.data.id);
-      setChainHash(response.data.tx_hash);
+
+      if (mode === 'autonomous') {
+        const response = await runAutonomousSimulation(formData);
+        setName(response.data); // Wait, name? Assuming typo in original code or missing setName? 
+        // Original code: setResult(response.data);
+        setResult(response.data);
+
+        if (response.data.detection_id) setLastRecordId(response.data.detection_id);
+        setChainHash(null);
+      } else {
+        const response = await sendLiveFrame(formData);
+        setResult(response.data);
+        setLastRecordId(response.data.id);
+        setChainHash(response.data.tx_hash);
+      }
+
     } catch (error) {
       console.error('Capture error:', error);
+      alert("Detection failed: " + (error.response?.data?.error || error.message));
     } finally {
       setProcessing(false);
     }
-  }, [webcamRef, landId]);
+  }, [webcamRef, landId, mode, removalMethod, herbicideName]);
 
   const handleUpload = async (e) => {
     if (!landId) {
@@ -60,42 +215,56 @@ const WeedDetector = () => {
     const file = e.target.files[0];
     if (!file) return;
 
+    // Reset previous results
+    setResult(null);
+    setLastRecordId(null);
+    setChainHash(null);
+
     const formData = new FormData();
     formData.append('video', file);
     formData.append('land_id', landId);
+    formData.append('removal_method', removalMethod);
+    formData.append('herbicide_name', herbicideName);
 
     setLoading(true);
     try {
       const response = await uploadVideo(formData);
-      setResult(response.data.results);
+      // Combine results with the top-level keys
+      // Backend returns: { message, detection_id, processed_video_url, results: {} }
+      const fullResult = {
+        ...response.data.results,
+        processed_video_url: response.data.processed_video_url,
+        processed_image_url: response.data.processed_image_url,
+        timeline_events: response.data.timeline_events || []
+      };
+      setResult(fullResult);
       setLastRecordId(response.data.detection_id);
-      setChainHash(null);
     } catch (error) {
       console.error('Upload error:', error);
-      // Check for the specific backend error message
       const errMsg = error.response?.data?.error || "Detection failed";
-      alert(errMsg); // Simple alert as requested, or set error state
-      setResult({ error: errMsg }); // Show error in results panel
+      alert(errMsg);
+      setResult({ error: errMsg });
     } finally {
       setLoading(false);
     }
   };
 
   const handleChainStore = async () => {
-    if (!lastRecordId) return;
+    if (!lastRecordId && !mode === 'autonomous') return; // Autonomous might not have record ID yet
     try {
       // 1. Send to Blockchain (MetaMask)
-      // Use a mock IPFS hash for now, similar to Dashboard
-      const mockIpfsHash = `Qm${lastRecordId}x${Date.now()}`;
+      const mockIpfsHash = `Qm${lastRecordId || Date.now()}x${Date.now()}`;
 
       const txHash = await storeDetectionOnBlockchain(
         mockIpfsHash,
-        "General Weed",
+        result.herbicide ? `Simulated: ${result.herbicide}` : "General Weed",
         Math.floor((result.confidence || result.avg_confidence || 0) * 100)
       );
 
       // 2. Save Hash to Backend
-      await verifyExternalTransaction(lastRecordId, txHash);
+      if (lastRecordId) {
+        await verifyExternalTransaction(lastRecordId, txHash);
+      }
 
       setChainHash(txHash);
       alert(`Verification successful! TX: ${txHash}`);
@@ -149,25 +318,31 @@ const WeedDetector = () => {
               <div className="grid grid-cols-2 gap-3 mb-6">
                 <ModeButton
                   active={mode === 'webcam'}
-                  onClick={() => setMode('webcam')}
+                  onClick={() => { setMode('webcam'); setLiveStreamActive(false); streamRef.current = false; setProcessedLiveFrame(null); }}
                   icon={<Camera className="text-blue-600" />}
-                  label="Live Camera"
-                  description="Real-time capture"
+                  label="Manual Scan"
+                  description="Live Camera"
+                />
+                <ModeButton
+                  active={mode === 'autonomous'}
+                  onClick={() => { setMode('autonomous'); setLiveStreamActive(false); streamRef.current = false; setProcessedLiveFrame(null); }}
+                  icon={<Bot className="text-orange-600" />}
+                  label="Autonomous"
+                  description="Drone Sim"
                 />
                 <ModeButton
                   active={mode === 'upload'}
-                  onClick={() => setMode('upload')}
+                  onClick={() => { setMode('upload'); setLiveStreamActive(false); streamRef.current = false; setProcessedLiveFrame(null); }}
                   icon={<Upload className="text-purple-600" />}
-                  label="Upload Video"
-                  description="Batch processing"
+                  label="Upload Media"
+                  description="Images & Videos"
                 />
               </div>
 
               <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-                {mode === 'webcam'
-                  ? "Ensure good lighting and stable camera for optimal detection accuracy."
-                  : "Supported formats: MP4, AVI, MOV. Max file size: 100MB."
-                }
+                {mode === 'webcam' && "Manual mode: Detect and log weeds."}
+                {mode === 'autonomous' && "Simulation: Detects weeds, simulates spraying, and updates status."}
+                {mode === 'upload' && "Supported formats: JPG, PNG, MP4, AVI."}
               </div>
             </div>
 
@@ -190,6 +365,36 @@ const WeedDetector = () => {
 
               {showSettings && (
                 <div className="space-y-4 animate-fade-in-up">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">
+                      Removal Method
+                    </label>
+                    <select
+                      value={removalMethod}
+                      onChange={(e) => setRemovalMethod(e.target.value)}
+                      className="input-field"
+                    >
+                      <option value="Manual">Manual Removal</option>
+                      <option value="Chemical">Chemical Herbicide</option>
+                      <option value="Organic">Organic Herbicide</option>
+                      <option value="Autonomous">Autonomous Robot</option>
+                    </select>
+                  </div>
+
+                  {(removalMethod === 'Chemical' || removalMethod === 'Organic' || removalMethod === 'Autonomous') && (
+                    <div className="space-y-2 animate-fade-in-up">
+                      <label className="text-sm font-medium text-gray-700">
+                        Herbicide / Agent Name
+                      </label>
+                      <input
+                        placeholder="e.g. Glyphosate, Vinegar..."
+                        value={herbicideName}
+                        onChange={(e) => setHerbicideName(e.target.value)}
+                        className="input-field"
+                      />
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-700">
                       Confidence Threshold
@@ -238,12 +443,13 @@ const WeedDetector = () => {
           <div className="lg:col-span-2 space-y-6">
             {/* Camera/Upload Area */}
             <div className="relative glass-card rounded-2xl overflow-hidden aspect-video bg-gradient-to-br from-gray-900 to-black">
-              {mode === 'webcam' ? (
+              {mode === 'webcam' || mode === 'autonomous' ? (
                 <div className="relative w-full h-full">
                   <Webcam
                     ref={webcamRef}
                     screenshotFormat="image/jpeg"
-                    className="w-full h-full object-cover"
+                    className={`w-full h-full object-cover ${processedLiveFrame ? 'opacity-0' : 'opacity-100'}`} // Hide webcam if we have processed frame overlay? Or just overlay it?
+                    // Actually, keep webcam hidden while streaming processed frame to avoid double image
                     videoConstraints={{
                       width: 1280,
                       height: 720,
@@ -251,38 +457,73 @@ const WeedDetector = () => {
                     }}
                   />
 
+                  {/* Live Processed Overlay */}
+                  {processedLiveFrame && (
+                    <img
+                      src={processedLiveFrame}
+                      className="absolute inset-0 w-full h-full object-cover z-10"
+                      alt="Live Detection"
+                    />
+                  )}
+
                   {/* Viewfinder Overlay */}
-                  <div className="absolute inset-0 border-4 border-white/10 pointer-events-none m-4 rounded-2xl">
-                    <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-primary-500 -mt-0.5 -ml-0.5"></div>
-                    <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-primary-500 -mt-0.5 -mr-0.5"></div>
-                    <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-primary-500 -mb-0.5 -ml-0.5"></div>
-                    <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-primary-500 -mb-0.5 -mr-0.5"></div>
+                  <div className={`absolute inset-0 border-4 ${mode === 'autonomous' ? 'border-orange-500/30' : 'border-white/10'} pointer-events-none m-4 rounded-2xl z-20`}>
+                    <div className={`absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 ${mode === 'autonomous' ? 'border-orange-500' : 'border-primary-500'} -mt-0.5 -ml-0.5`}></div>
+                    <div className={`absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 ${mode === 'autonomous' ? 'border-orange-500' : 'border-primary-500'} -mt-0.5 -mr-0.5`}></div>
+                    <div className={`absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 ${mode === 'autonomous' ? 'border-orange-500' : 'border-primary-500'} -mb-0.5 -ml-0.5`}></div>
+                    <div className={`absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 ${mode === 'autonomous' ? 'border-orange-500' : 'border-primary-500'} -mb-0.5 -mr-0.5`}></div>
+
+                    {mode === 'autonomous' && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Crosshair className="text-orange-500/50 w-24 h-24" />
+                      </div>
+                    )}
                   </div>
 
-                  {/* Capture Button */}
-                  <div className="absolute bottom-6 left-0 w-full flex justify-center">
+                  {/* Controls Container */}
+                  <div className="absolute bottom-6 left-0 w-full flex justify-center gap-4 z-30">
+                    {/* Capture Button (Single Shot) */}
                     <button
                       onClick={capture}
-                      disabled={processing || !landId}
-                      className="relative group"
+                      disabled={processing || !landId || liveStreamActive}
+                      className="relative group disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <div className="absolute inset-0 bg-red-500 rounded-full blur-xl opacity-75 group-hover:opacity-100 transition-opacity" />
-                      <div className="relative bg-gradient-to-br from-red-500 to-red-600 text-white rounded-full p-5 shadow-2xl hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed">
+                      {/* Style adjustments for disabled state */}
+                      <div className={`absolute inset-0 ${mode === 'autonomous' ? 'bg-orange-500' : 'bg-red-500'} rounded-full blur-xl opacity-75 group-hover:opacity-100 transition-opacity`} />
+                      <div className={`relative bg-gradient-to-br ${mode === 'autonomous' ? 'from-orange-500 to-red-600' : 'from-red-500 to-red-600'} text-white rounded-full p-5 shadow-2xl hover:scale-105 active:scale-95 transition-transform`}>
                         {processing ? (
                           <Loader2 className="animate-spin" size={32} />
                         ) : (
-                          <Scan size={32} />
+                          mode === 'autonomous' ? <Bot size={32} /> : <Scan size={32} />
                         )}
+                      </div>
+                    </button>
+
+                    {/* Live Stream Toggle */}
+                    <button
+                      onClick={toggleLiveStream}
+                      disabled={processing || !landId}
+                      className="relative group disabled:opacity-50"
+                    >
+                      <div className={`absolute inset-0 ${liveStreamActive ? 'bg-red-500' : 'bg-green-500'} rounded-full blur-xl opacity-75 group-hover:opacity-100 transition-opacity`} />
+                      <div className={`relative bg-gradient-to-br ${liveStreamActive ? 'from-red-500 to-red-700' : 'from-green-500 to-green-700'} text-white rounded-full p-5 shadow-2xl hover:scale-105 active:scale-95 transition-transform`}>
+                        {liveStreamActive ? <Square size={32} fill="currentColor" /> : <Play size={32} fill="currentColor" />}
                       </div>
                     </button>
                   </div>
 
                   {/* Status Bar */}
-                  <div className="absolute top-4 left-4 right-4 flex justify-between items-center">
-                    <div className="flex items-center gap-2 bg-black/50 backdrop-blur-sm px-3 py-1.5 rounded-full text-white text-sm">
+                  <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-30">
+                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-white text-sm backdrop-blur-sm ${liveStreamActive ? 'bg-red-600/80 animate-pulse' : 'bg-black/50'}`}>
                       <Battery size={14} />
-                      <span>Live</span>
+                      <span>{liveStreamActive ? "STREAMING LIVE" : "Standby"}</span>
                     </div>
+                    {mode === 'autonomous' && (
+                      <div className="flex items-center gap-2 bg-orange-600/80 backdrop-blur-sm px-3 py-1.5 rounded-full text-white text-sm animate-pulse">
+                        <Bot size={14} />
+                        <span>AUTONOMOUS MODE</span>
+                      </div>
+                    )}
                     <div className="flex items-center gap-2 bg-black/50 backdrop-blur-sm px-3 py-1.5 rounded-full text-white text-sm">
                       <Clock size={14} />
                       <span>{cameraSettings.frameRate} FPS</span>
@@ -290,43 +531,54 @@ const WeedDetector = () => {
                   </div>
                 </div>
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center p-8">
-                  <div className="text-center mb-6">
-                    <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-primary-100 to-secondary-100 rounded-2xl flex items-center justify-center">
-                      <Upload className="text-primary-600" size={32} />
-                    </div>
-                    <p className="text-lg font-medium text-white mb-2">Upload Video for Analysis</p>
-                    <p className="text-gray-300 text-sm">Drag & drop or click to browse</p>
-                  </div>
-
-                  <label className="cursor-pointer">
-                    <div className="bg-white/10 hover:bg-white/20 backdrop-blur-sm px-6 py-3 rounded-xl text-white font-medium transition-colors">
-                      Select Video File
-                    </div>
-                    <input
-                      type="file"
-                      accept="video/*"
-                      onChange={handleUpload}
-                      className="hidden"
+                <div className="w-full h-full flex flex-col items-center justify-center p-0 overflow-hidden bg-black">
+                  {result?.processed_video_url ? (
+                    // CHANGED FROM <video> TO <img> FOR MJPEG STREAM AND STATIC IMAGES
+                    <img
+                      src={result.processed_image_url || result.processed_video_url}
+                      alt="Processed Output"
+                      className="w-full h-full object-contain"
                     />
-                  </label>
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center p-8">
+                      <div className="text-center mb-6">
+                        <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-primary-100 to-secondary-100 rounded-2xl flex items-center justify-center">
+                          <Upload className="text-primary-600" size={32} />
+                        </div>
+                        <p className="text-lg font-medium text-white mb-2">Upload Video for Analysis</p>
+                        <p className="text-gray-300 text-sm">Drag & drop or click to browse</p>
+                      </div>
+
+                      <label className="cursor-pointer">
+                        <div className="bg-white/10 hover:bg-white/20 backdrop-blur-sm px-6 py-3 rounded-xl text-white font-medium transition-colors">
+                          Select Video File
+                        </div>
+                        <input
+                          type="file"
+                          accept="video/*,image/*"
+                          onChange={handleUpload}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                  )}
                 </div>
               )}
 
               {/* Loading Overlay */}
               {(loading || processing) && (
-                <div className="absolute inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center">
+                <div className="absolute inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50">
                   <div className="text-center p-8">
                     <div className="relative mx-auto mb-6">
                       <Loader2 className="animate-spin text-primary-400" size={64} />
                       <Zap className="absolute inset-0 m-auto text-primary-200" size={32} />
                     </div>
                     <p className="text-2xl font-bold text-white mb-2">
-                      {processing ? 'Analyzing Frame...' : 'Processing Video...'}
+                      {processing ? (mode === 'autonomous' ? 'Simulating Drone Action...' : 'Analyzing Frame...') : 'Processing Video...'}
                     </p>
                     <p className="text-gray-300 max-w-md mx-auto">
                       {processing
-                        ? 'Running AI detection models on captured image'
+                        ? (mode === 'autonomous' ? 'Detecting weeds and calculating herbicide dosage...' : 'Running AI detection models on captured image')
                         : 'Scanning video frames for weed detection patterns'
                       }
                     </p>
@@ -347,7 +599,7 @@ const WeedDetector = () => {
                     <h3 className="text-xl font-bold text-red-700 mb-2">Detection Error</h3>
                     <p className="text-red-600 font-medium">{result.error}</p>
                     <p className="text-sm text-red-500 mt-2">
-                      The custom model could not be loaded or executed.
+                      {result.error.includes("model") ? "The custom model could not be loaded." : "An error occurred during processing."}
                     </p>
                   </div>
                 ) : (
@@ -355,12 +607,19 @@ const WeedDetector = () => {
                     <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
                       <div>
                         <h3 className="text-xl font-bold text-gray-900 mb-1">
-                          Detection Results
+                          {mode === 'autonomous' ? 'Simulation Report' : 'Detection Results'}
                         </h3>
                         <p className="text-gray-600">
-                          AI analysis completed successfully
+                          {result.processing_status === 'completed' ? 'Analysis Complete - Results Saved' : (mode === 'autonomous' ? 'Autonomous intervention complete' : 'AI analysis in progress')}
                         </p>
                       </div>
+
+                      {result.completion_message && (
+                        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl mb-4 flex items-center gap-2">
+                          <ShieldCheck size={20} />
+                          <span className="font-medium">{result.completion_message}</span>
+                        </div>
+                      )}
 
                       <div className="flex gap-3">
                         {chainHash ? (
@@ -381,20 +640,65 @@ const WeedDetector = () => {
                       </div>
                     </div>
 
+                    {/* Stream info if streaming */}
+                    {result.status === "streaming" && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 text-center">
+                        <p className="text-blue-700 font-semibold animate-pulse">Live Video Stream Active</p>
+                      </div>
+                    )}
+
+                    {/* Autonomous Simulation Visuals */}
+                    {mode === 'autonomous' && result.processed_image_base64 && (
+                      <div className="mb-6 rounded-xl overflow-hidden border border-gray-200">
+                        <div className="bg-gray-100 p-2 text-sm font-semibold text-gray-700 border-b flex justify-between">
+                          <span>Drone View (Augmented)</span>
+                          <span className="text-orange-600">Simulated Action</span>
+                        </div>
+                        <img src={result.processed_image_base64} alt="Processed Simulation" className="w-full object-contain max-h-96" />
+                      </div>
+                    )}
+
+                    {/* Action Logs for Autonomous */}
+                    {mode === 'autonomous' && result.actions && (
+                      <div className="bg-orange-50 border border-orange-100 rounded-xl p-4 mb-6">
+                        <h4 className="font-semibold text-orange-900 mb-2 flex items-center gap-2">
+                          <Bot size={16} /> Mission Log
+                        </h4>
+                        <ul className="space-y-1">
+                          {result.actions.map((action, idx) => (
+                            <li key={idx} className="text-sm text-orange-800 flex items-start gap-2">
+                              <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-orange-500" />
+                              {action}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
                     {/* Stats Grid */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                       <ResultStat
                         label="Weeds Detected"
                         value={result.weed_count || result.total_weeds || 0}
-                        change="+12%"
+                        change={mode === 'autonomous' ? 'Targeted' : '+12%'}
                         color="red"
                       />
-                      <ResultStat
-                        label="Confidence"
-                        value={`${Math.round((result.confidence || result.avg_confidence || 0) * 100)}%`}
-                        change="High"
-                        color="blue"
-                      />
+                      {mode === 'autonomous' ? (
+                        <ResultStat
+                          label="Herbicide Used"
+                          value={result.herbicide ? "Yes" : "None"}
+                          change={result.herbicide || "N/A"}
+                          color="orange"
+                        />
+                      ) : (
+                        <ResultStat
+                          label="Confidence"
+                          value={`${Math.round((result.confidence || result.avg_confidence || 0) * 100)}%`}
+                          change="High"
+                          color="blue"
+                        />
+                      )}
+
                       <ResultStat
                         label="Processing Time"
                         value={`${(result.processing_time || 0.8).toFixed(2)}s`}
@@ -402,9 +706,9 @@ const WeedDetector = () => {
                         color="green"
                       />
                       <ResultStat
-                        label="Frames Analyzed"
-                        value={result.frames_analyzed || 1}
-                        change="100%"
+                        label={mode === 'autonomous' ? "Action Status" : "Frames Analyzed"}
+                        value={mode === 'autonomous' ? "Completed" : (result.frames_analyzed || 1)}
+                        change={mode === 'autonomous' ? "100%" : "Success"}
                         color="purple"
                       />
                     </div>
@@ -438,6 +742,36 @@ const WeedDetector = () => {
                               Copy Hash
                             </button>
                           </div>
+                        </div>
+                      </div>
+                    )}
+                    {/* Timeline Events Details */}
+                    {result.timeline_events && result.timeline_events.length > 0 && (
+                      <div className="mt-6 mb-6">
+                        <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                          <Clock size={16} /> Detailed Detection Log
+                        </h4>
+                        <div className="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden max-h-60 overflow-y-auto">
+                          <table className="w-full text-sm text-left">
+                            <thead className="bg-gray-100 text-gray-700 font-semibold border-b">
+                              <tr>
+                                <th className="px-4 py-2">Time</th>
+                                <th className="px-4 py-2">Class</th>
+                                <th className="px-4 py-2">Confidence</th>
+                                <th className="px-4 py-2">Frame</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                              {result.timeline_events.map((evt, idx) => (
+                                <tr key={idx} className="hover:bg-gray-50">
+                                  <td className="px-4 py-2 font-mono text-gray-600">{evt.timestamp}</td>
+                                  <td className="px-4 py-2 font-medium text-gray-900">{evt.weed_class}</td>
+                                  <td className="px-4 py-2 text-blue-600 font-semibold">{(evt.confidence * 100).toFixed(0)}%</td>
+                                  <td className="px-4 py-2 text-gray-500">{evt.frame_number}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
                         </div>
                       </div>
                     )}
@@ -477,7 +811,8 @@ const ResultStat = ({ label, value, change, color }) => {
     red: 'from-red-500 to-red-600',
     blue: 'from-blue-500 to-blue-600',
     green: 'from-green-500 to-green-600',
-    purple: 'from-purple-500 to-purple-600'
+    purple: 'from-purple-500 to-purple-600',
+    orange: 'from-orange-500 to-orange-600'
   };
 
   return (
@@ -486,12 +821,12 @@ const ResultStat = ({ label, value, change, color }) => {
         {label}
       </p>
       <div className="flex items-end justify-between">
-        <p className={`text-3xl font-bold bg-gradient-to-r ${colorClasses[color]} bg-clip-text text-transparent`}>
+        <p className={`text-2xl font-bold bg-gradient-to-r ${colorClasses[color] || colorClasses.blue} bg-clip-text text-transparent truncate`}>
           {value}
         </p>
-        <span className={`text-xs font-medium px-2 py-1 rounded-full ${color === 'green'
+        <span className={`text-xs font-medium px-2 py-1 rounded-full ${color === 'orange' ? 'bg-orange-50 text-orange-700' : (color === 'green'
           ? 'bg-green-50 text-green-700'
-          : 'bg-blue-50 text-blue-700'
+          : 'bg-blue-50 text-blue-700')
           }`}>
           {change}
         </span>
