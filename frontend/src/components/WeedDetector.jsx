@@ -371,8 +371,8 @@ const WeedDetector = () => {
             {/* Asset Input */}
             <div className="glass-card rounded-2xl p-6">
               <div className="flex items-center gap-2 mb-4">
-                <div className="p-2 bg-primary-100 rounded-lg">
-                  <Scan className="text-primary-600" size={18} />
+                <div className="p-2 bg-agro-100 rounded-lg">
+                  <Scan className="text-agro-600" size={18} />
                 </div>
                 <h3 className="font-semibold text-gray-900">Target Asset</h3>
               </div>
@@ -546,10 +546,10 @@ const WeedDetector = () => {
 
                   {/* Viewfinder Overlay */}
                   <div className={`absolute inset-0 border-4 ${mode === 'autonomous' ? 'border-orange-500/30' : 'border-white/10'} pointer-events-none m-4 rounded-2xl z-20`}>
-                    <div className={`absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 ${mode === 'autonomous' ? 'border-orange-500' : 'border-primary-500'} -mt-0.5 -ml-0.5`}></div>
-                    <div className={`absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 ${mode === 'autonomous' ? 'border-orange-500' : 'border-primary-500'} -mt-0.5 -mr-0.5`}></div>
-                    <div className={`absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 ${mode === 'autonomous' ? 'border-orange-500' : 'border-primary-500'} -mb-0.5 -ml-0.5`}></div>
-                    <div className={`absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 ${mode === 'autonomous' ? 'border-orange-500' : 'border-primary-500'} -mb-0.5 -mr-0.5`}></div>
+                    <div className={`absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 ${mode === 'autonomous' ? 'border-orange-500' : 'border-agro-500'} -mt-0.5 -ml-0.5`}></div>
+                    <div className={`absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 ${mode === 'autonomous' ? 'border-orange-500' : 'border-agro-500'} -mt-0.5 -mr-0.5`}></div>
+                    <div className={`absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 ${mode === 'autonomous' ? 'border-orange-500' : 'border-agro-500'} -mb-0.5 -ml-0.5`}></div>
+                    <div className={`absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 ${mode === 'autonomous' ? 'border-orange-500' : 'border-agro-500'} -mb-0.5 -mr-0.5`}></div>
 
                     {mode === 'autonomous' && (
                       <div className="absolute inset-0 flex items-center justify-center">
@@ -620,8 +620,8 @@ const WeedDetector = () => {
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center p-8">
                       <div className="text-center mb-6">
-                        <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-primary-100 to-secondary-100 rounded-2xl flex items-center justify-center">
-                          <Upload className="text-primary-600" size={32} />
+                        <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-agro-100 to-secondary-100 rounded-2xl flex items-center justify-center">
+                          <Upload className="text-agro-600" size={32} />
                         </div>
                         <p className="text-lg font-medium text-white mb-2">Upload Video for Analysis</p>
                         <p className="text-gray-300 text-sm">Drag & drop or click to browse</p>
@@ -648,8 +648,8 @@ const WeedDetector = () => {
                 <div className="absolute inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50">
                   <div className="text-center p-8">
                     <div className="relative mx-auto mb-6">
-                      <Loader2 className="animate-spin text-primary-400" size={64} />
-                      <Zap className="absolute inset-0 m-auto text-primary-200" size={32} />
+                      <Loader2 className="animate-spin text-agro-400" size={64} />
+                      <Zap className="absolute inset-0 m-auto text-agro-200" size={32} />
                     </div>
                     <p className="text-2xl font-bold text-white mb-2">
                       {processing ? (mode === 'autonomous' ? 'Simulating Drone Action...' : 'Analyzing Frame...') : 'Processing Video...'}
@@ -661,7 +661,7 @@ const WeedDetector = () => {
                       }
                     </p>
                     <div className="mt-6 w-64 h-1 bg-gray-700 rounded-full overflow-hidden mx-auto">
-                      <div className="h-full bg-gradient-to-r from-primary-500 to-secondary-500 animate-pulse" />
+                      <div className="h-full bg-gradient-to-r from-agro-500 to-secondary-500 animate-pulse" />
                     </div>
                   </div>
                 </div>
@@ -803,7 +803,7 @@ const WeedDetector = () => {
                               Blockchain Transaction
                             </h4>
                           </div>
-                          <button className="text-primary-600 hover:text-primary-700 text-sm font-medium">
+                          <button className="text-agro-600 hover:text-agro-700 text-sm font-medium">
                             <Share2 size={16} />
                           </button>
                         </div>
@@ -815,7 +815,7 @@ const WeedDetector = () => {
                             <span>Confirmed • 2 seconds ago</span>
                             <button
                               onClick={() => navigator.clipboard.writeText(chainHash)}
-                              className="text-primary-600 hover:text-primary-700 font-medium"
+                              className="text-agro-600 hover:text-agro-700 font-medium"
                             >
                               Copy Hash
                             </button>
@@ -844,7 +844,7 @@ const WeedDetector = () => {
                                 <tr key={idx} className="hover:bg-gray-50">
                                   <td className="px-4 py-2 font-mono text-gray-600">{evt.timestamp}</td>
                                   <td className="px-4 py-2 font-medium text-gray-900">{evt.weed_class}</td>
-                                  <td className="px-4 py-2 text-blue-600 font-semibold">{(evt.confidence * 100).toFixed(0)}%</td>
+                                  <td className="px-4 py-2 text-agro-600 font-semibold">{(evt.confidence * 100).toFixed(0)}%</td>
                                   <td className="px-4 py-2 text-gray-500">{evt.frame_number}</td>
                                 </tr>
                               ))}
@@ -868,15 +868,15 @@ const ModeButton = ({ active, onClick, icon, label, description }) => (
   <button
     onClick={onClick}
     className={`flex flex-col items-center p-4 rounded-xl border transition-all ${active
-      ? 'bg-gradient-to-br from-primary-50 to-blue-50 border-primary-200 ring-1 ring-primary-100'
-      : 'bg-white border-gray-200 hover:border-primary-200 hover:bg-gray-50'
+      ? 'bg-gradient-to-br from-agro-50 to-green-50 border-agro-200 ring-1 ring-agro-100'
+      : 'bg-white border-stone-200 hover:border-agro-200 hover:bg-stone-50'
       }`}
   >
-    <div className={`p-3 rounded-xl mb-3 ${active ? 'bg-white shadow-sm' : 'bg-gray-100'
+    <div className={`p-3 rounded-xl mb-3 ${active ? 'bg-white shadow-sm' : 'bg-stone-100'
       }`}>
       {icon}
     </div>
-    <span className={`font-semibold mb-1 ${active ? 'text-primary-700' : 'text-gray-700'
+    <span className={`font-semibold mb-1 ${active ? 'text-agro-700' : 'text-gray-700'
       }`}>
       {label}
     </span>

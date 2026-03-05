@@ -118,8 +118,8 @@ const Dashboard = () => {
         {/* Search Section */}
         <div className="glass-card rounded-2xl p-6 mb-8">
           <div className="flex items-center gap-2 mb-6">
-            <div className="p-2 bg-primary-100 rounded-lg">
-              <Activity className="text-primary-600" size={20} />
+            <div className="p-2 bg-agro-100 rounded-lg">
+              <Activity className="text-agro-600" size={20} />
             </div>
             <h2 className="text-lg font-semibold text-gray-900">
               Search Asset
@@ -179,8 +179,8 @@ const Dashboard = () => {
               <div className="flex justify-between items-start mb-6">
                 <div>
                   <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 bg-primary-100 rounded-lg">
-                      <Sprout className="text-primary-600" size={20} />
+                    <div className="p-2 bg-agro-100 rounded-lg">
+                      <Sprout className="text-agro-600" size={20} />
                     </div>
                     <h2 className="text-xl font-bold text-gray-900">
                       {landDetails.farmer_name}
@@ -286,8 +286,8 @@ const Dashboard = () => {
           <div className="glass-card rounded-2xl p-6">
             <div className="flex justify-between items-center mb-6">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary-100 rounded-lg">
-                  <Clock className="text-primary-600" size={20} />
+                <div className="p-2 bg-agro-100 rounded-lg">
+                  <Clock className="text-agro-600" size={20} />
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-gray-900">
@@ -305,8 +305,8 @@ const Dashboard = () => {
                     key={filter}
                     onClick={() => setActiveFilter(filter)}
                     className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${activeFilter === filter
-                      ? 'bg-primary-600 text-white'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      ? 'bg-agro-600 text-white'
+                      : 'bg-stone-100 text-gray-600 hover:bg-stone-200'
                       }`}
                   >
                     {filter.charAt(0).toUpperCase() + filter.slice(1)}
@@ -317,7 +317,7 @@ const Dashboard = () => {
 
             <div className="relative">
               {/* Timeline line */}
-              <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary-200 to-transparent" />
+              <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gradient-to-b from-agro-200 to-transparent" />
 
               <div className="space-y-8 ml-14">
                 {filteredHistory.map((record, index) => (
@@ -358,7 +358,7 @@ const Dashboard = () => {
 
               {chainLoading ? (
                 <div className="py-12 flex flex-col items-center justify-center text-gray-500">
-                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-600 border-t-transparent mb-3" />
+                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-agro-600 border-t-transparent mb-3" />
                   <p>Fetching from Blockchain...</p>
                 </div>
               ) : chainData ? (
@@ -408,8 +408,8 @@ const Dashboard = () => {
         {/* Empty State */}
         {!landDetails && !loading && history.length === 0 && (
           <div className="glass-card rounded-2xl p-12 text-center">
-            <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-primary-100 to-secondary-100 rounded-full flex items-center justify-center">
-              <Search className="text-primary-600" size={40} />
+            <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-agro-100 to-secondary-100 rounded-full flex items-center justify-center">
+              <Search className="text-agro-600" size={40} />
             </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
               Search for an Asset
@@ -418,7 +418,7 @@ const Dashboard = () => {
               Enter an Asset ID above to view its complete traceability history,
               detection events, and blockchain verification status.
             </p>
-            <div className="inline-flex items-center gap-2 text-primary-600 font-medium">
+            <div className="inline-flex items-center gap-2 text-agro-600 font-medium">
               <ChevronRight size={16} />
               <span>Start by searching for an asset ID</span>
             </div>
@@ -432,7 +432,7 @@ const Dashboard = () => {
 const StatCard = ({ icon, label, value }) => (
   <div className="stat-card">
     <div className="flex items-center gap-3 mb-2">
-      <div className="p-2 bg-gray-100 rounded-lg">
+      <div className="p-2 bg-stone-100 rounded-lg">
         {icon}
       </div>
       <div className="flex-1">
@@ -513,7 +513,7 @@ const TimelineItem = ({ record, index, onVerify, onViewChain }) => (
             </span>
             <button
               onClick={onVerify}
-              className="flex items-center gap-1 px-3 py-1 bg-primary-600 text-white rounded-full text-sm font-medium hover:bg-primary-700 transition-colors"
+              className="flex items-center gap-1 px-3 py-1 bg-agro-600 text-white rounded-full text-sm font-medium hover:bg-agro-700 transition-colors"
             >
               <Link size={14} />
               Verify Now
@@ -536,7 +536,7 @@ const TimelineItem = ({ record, index, onVerify, onViewChain }) => (
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
             Confidence
           </p>
-          <p className="text-2xl font-bold text-primary-600 mt-1">
+          <p className="text-2xl font-bold text-agro-600 mt-1">
             {(record.confidence * 100).toFixed(1)}%
           </p>
         </div>

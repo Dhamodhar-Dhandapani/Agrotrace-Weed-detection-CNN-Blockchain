@@ -58,24 +58,24 @@ function App() {
           </Routes>
         </main>
 
-        <footer className="bg-gradient-to-r from-gray-900 to-primary-900 text-white py-8">
+        <footer className="bg-gradient-to-r from-agro-950 to-earth-900 text-white py-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid md:grid-cols-4 gap-8 mb-8">
               <div>
                 <div className="flex items-center space-x-3 mb-4">
-                  <div className="bg-primary-500 p-2 rounded-lg">
+                  <div className="bg-agro-500 p-2 rounded-lg">
                     <Sprout size={24} />
                   </div>
                   <span className="text-xl font-bold">AgroTrace</span>
                 </div>
-                <p className="text-gray-300 text-sm">
+                <p className="text-stone-300 text-sm">
                   Blockchain-verified agricultural traceability for sustainable farming.
                 </p>
               </div>
 
               <div>
                 <h4 className="font-semibold mb-4">Platform</h4>
-                <ul className="space-y-2 text-sm text-gray-300">
+                <ul className="space-y-2 text-sm text-stone-300">
                   <li><a href="#" className="hover:text-white">Features</a></li>
                   <li><a href="#" className="hover:text-white">API</a></li>
                   <li><a href="#" className="hover:text-white">Documentation</a></li>
@@ -84,7 +84,7 @@ function App() {
 
               <div>
                 <h4 className="font-semibold mb-4">Resources</h4>
-                <ul className="space-y-2 text-sm text-gray-300">
+                <ul className="space-y-2 text-sm text-stone-300">
                   <li><a href="../Weed detection research paper.pdf" className="hover:text-white">Case Studies</a></li>
                   <li><a href="#" className="hover:text-white">Support</a></li>
                   <li><a href="#" className="hover:text-white">Community</a></li>
@@ -93,7 +93,7 @@ function App() {
 
               <div>
                 <h4 className="font-semibold mb-4">Legal</h4>
-                <ul className="space-y-2 text-sm text-gray-300">
+                <ul className="space-y-2 text-sm text-stone-300">
                   <li><a href="#" className="hover:text-white">Privacy Policy</a></li>
                   <li><a href="#" className="hover:text-white">Terms of Service</a></li>
                   <li><a href="#" className="hover:text-white">Cookie Policy</a></li>
@@ -102,7 +102,7 @@ function App() {
               </div>
             </div>
 
-            <div className="pt-8 border-t border-gray-800 text-center text-gray-400 text-sm">
+            <div className="pt-8 border-t border-earth-800 text-center text-stone-400 text-sm">
               <p>© {new Date().getFullYear()} AgroTrace. All rights reserved. Built for Sustainable Agriculture.</p>
               <p className="mt-2">Blockchain Network: Ethereum • Polygon • Solana</p>
             </div>

@@ -48,7 +48,7 @@ const MyAssets = ({ user }) => {
 
                 {loading ? (
                     <div className="flex justify-center p-12">
-                        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-600 border-t-transparent"></div>
+                        <div className="animate-spin rounded-full h-8 w-8 border-2 border-agro-600 border-t-transparent"></div>
                     </div>
                 ) : assets.length === 0 ? (
                     <div className="glass-card rounded-2xl p-12 text-center">
@@ -67,7 +67,7 @@ const MyAssets = ({ user }) => {
                             <div
                                 key={asset.id}
                                 onClick={() => navigate('/dashboard', { state: { preloadedLandId: asset.id } })} // pass state to dashboard
-                                className="group glass-card p-6 rounded-2xl cursor-pointer hover:shadow-xl transition-all border border-transparent hover:border-primary-200"
+                                className="group glass-card p-6 rounded-2xl cursor-pointer hover:shadow-xl transition-all border border-transparent hover:border-agro-200"
                             >
                                 <div className="flex justify-between items-start mb-4">
                                     <div className="p-3 bg-green-100 rounded-xl group-hover:scale-110 transition-transform">
@@ -91,8 +91,8 @@ const MyAssets = ({ user }) => {
                                             <span className="font-medium text-gray-900">{asset.crop_type}</span>
                                             {asset.farming_method && (
                                                 <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${asset.farming_method === 'Organic'
-                                                        ? 'bg-green-50 text-green-700 border-green-200'
-                                                        : 'bg-blue-50 text-blue-700 border-blue-200'
+                                                    ? 'bg-green-50 text-green-700 border-green-200'
+                                                    : 'bg-blue-50 text-blue-700 border-blue-200'
                                                     }`}>
                                                     {asset.farming_method}
                                                 </span>

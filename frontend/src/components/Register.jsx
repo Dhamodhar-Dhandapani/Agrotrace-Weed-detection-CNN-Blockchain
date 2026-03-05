@@ -93,7 +93,7 @@ const Register = ({ setUser }) => {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="btn-primary w-full group bg-gradient-to-r from-secondary-500 to-secondary-600 hover:from-secondary-600 hover:to-secondary-700"
+                        className="btn-primary w-full group bg-gradient-to-r from-agro-500 to-agro-600 hover:from-agro-600 hover:to-agro-700"
                     >
                         {loading ? (
                             <Loader2 className="animate-spin" size={20} />
@@ -108,7 +108,7 @@ const Register = ({ setUser }) => {
 
                 <p className="mt-8 text-center text-sm text-gray-600">
                     Already have an account?{' '}
-                    <Link to="/login" className="text-secondary-600 font-semibold hover:text-secondary-700">
+                    <Link to="/login" className="text-agro-600 font-semibold hover:text-agro-700">
                         Sign in
                     </Link>
                 </p>

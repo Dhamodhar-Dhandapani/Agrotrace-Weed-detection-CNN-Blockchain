@@ -70,7 +70,7 @@ const LandRegister = () => {
             {/* Progress line */}
             <div className="absolute top-4 left-0 right-0 h-0.5 bg-gray-200 -z-10">
               <div
-                className="h-full bg-primary-600 transition-all duration-500"
+                className="h-full bg-agro-600 transition-all duration-500"
                 style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
               />
             </div>
@@ -80,8 +80,8 @@ const LandRegister = () => {
                 <div className={`
                   w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold
                   ${step.id <= currentStep
-                    ? 'bg-primary-600 text-white'
-                    : 'bg-gray-200 text-gray-500'
+                    ? 'bg-agro-600 text-white'
+                    : 'bg-stone-200 text-gray-500'
                   }
                 `}>
                   {step.id}
@@ -141,8 +141,8 @@ const StepOne = ({ formData, onChange, onNext }) => {
   return (
     <div className="animate-fade-in-up">
       <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-primary-100 rounded-lg">
-          <User className="text-primary-600" size={20} />
+        <div className="p-2 bg-agro-100 rounded-lg">
+          <User className="text-agro-600" size={20} />
         </div>
         <h2 className="text-xl font-bold text-gray-900">
           Ownership Details
@@ -272,7 +272,7 @@ const StepTwo = ({ formData, onChange, onBack, loading }) => {
                   value="Conventional"
                   checked={formData.farming_method !== 'Organic'}
                   onChange={onChange}
-                  className="w-4 h-4 text-primary-600 focus:ring-primary-500"
+                  className="w-4 h-4 text-agro-600 focus:ring-agro-500"
                 />
                 <span className="text-gray-700">Conventional Farming</span>
               </label>

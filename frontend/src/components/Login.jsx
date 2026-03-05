@@ -29,8 +29,8 @@ const Login = ({ setUser }) => {
         <div className="min-h-screen pt-24 pb-12 px-4 flex items-center justify-center">
             <div className="glass-card w-full max-w-md p-8 rounded-2xl animate-fade-in-up">
                 <div className="text-center mb-8">
-                    <div className="w-16 h-16 bg-primary-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                        <LogIn className="text-primary-600" size={32} />
+                    <div className="w-16 h-16 bg-agro-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <LogIn className="text-agro-600" size={32} />
                     </div>
                     <h2 className="text-2xl font-bold text-gray-900">Welcome Back</h2>
                     <p className="text-gray-600 mt-2">Sign in to your AgroTrace account</p>
@@ -92,7 +92,7 @@ const Login = ({ setUser }) => {
 
                 <p className="mt-8 text-center text-sm text-gray-600">
                     Don't have an account?{' '}
-                    <Link to="/signup" className="text-primary-600 font-semibold hover:text-primary-700">
+                    <Link to="/signup" className="text-agro-600 font-semibold hover:text-agro-700">
                         Create account
                     </Link>
                 </p>

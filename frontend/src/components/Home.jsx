@@ -12,8 +12,8 @@ const Home = () => {
       {/* Hero Section */}
       <section className="relative pt-24 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
         {/* Background Effects */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-50 via-white to-secondary-50" />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-primary-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-float" />
+        <div className="absolute inset-0 bg-gradient-to-br from-green-50 via-stone-50 to-secondary-50" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-agro-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-float" />
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-secondary-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-float" style={{ animationDelay: '1s' }} />
 
         <div className="relative max-w-7xl mx-auto">
@@ -57,7 +57,7 @@ const Home = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-gray-50">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-stone-50">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
@@ -71,25 +71,25 @@ const Home = () => {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             <FeatureCard
-              icon={<Cpu className="text-blue-500" size={32} />}
+              icon={<Cpu className="text-agro-500" size={32} />}
               title="Computer Vision Engine"
               description="Real-time weed detection using YOLOv8 with multi-model ensemble for high accuracy."
               features={["Real-time Processing", "Multi-model Ensemble"]}
-              color="blue"
-            />
-            <FeatureCard
-              icon={<GitBranch className="text-green-500" size={32} />}
-              title="Blockchain Ledger"
-              description="Immutable record-keeping with cryptographic verification and smart contract integration."
-              features={["SHA-256 Hashing", "Smart Contracts"]}
               color="green"
             />
             <FeatureCard
-              icon={<Database className="text-purple-500" size={32} />}
+              icon={<GitBranch className="text-secondary-500" size={32} />}
+              title="Blockchain Ledger"
+              description="Immutable record-keeping with cryptographic verification and smart contract integration."
+              features={["SHA-256 Hashing", "Smart Contracts"]}
+              color="amber"
+            />
+            <FeatureCard
+              icon={<Database className="text-earth-500" size={32} />}
               title="Digital Identity"
               description="Unique cryptographic IDs for every asset with QR-based verification system."
               features={["UUID Generation", "QR Verification"]}
-              color="purple"
+              color="earth"
             />
           </div>
         </div>
@@ -112,25 +112,25 @@ const Home = () => {
               number="01"
               title="Asset Registration"
               description="Create digital identity with comprehensive metadata"
-              icon={<Database className="text-primary-600" />}
+              icon={<Database className="text-agro-600" />}
             />
             <StepCard
               number="02"
               title="AI Detection"
               description="Real-time weed detection using computer vision"
-              icon={<Cpu className="text-primary-600" />}
+              icon={<Cpu className="text-agro-600" />}
             />
             <StepCard
               number="03"
               title="Blockchain Recording"
               description="Immutable storage of detection events"
-              icon={<Lock className="text-primary-600" />}
+              icon={<Lock className="text-agro-600" />}
             />
             <StepCard
               number="04"
               title="Traceability"
               description="Complete audit trail and verification"
-              icon={<ShieldCheck className="text-primary-600" />}
+              icon={<ShieldCheck className="text-agro-600" />}
             />
           </div>
         </div>
@@ -155,17 +155,17 @@ const TrustIndicator = ({ icon, value, label }) => (
 
 const FeatureCard = ({ icon, title, description, features, color }) => {
   const colorClasses = {
-    blue: 'border-blue-200 hover:border-blue-300',
-    green: 'border-green-200 hover:border-green-300',
-    purple: 'border-purple-200 hover:border-purple-300',
+    green: 'border-agro-200 hover:border-agro-300',
+    amber: 'border-secondary-200 hover:border-secondary-300',
+    earth: 'border-earth-200 hover:border-earth-300',
     cyan: 'border-cyan-200 hover:border-cyan-300',
-    amber: 'border-amber-200 hover:border-amber-300',
+    blue: 'border-blue-200 hover:border-blue-300',
     pink: 'border-pink-200 hover:border-pink-300',
   };
 
   return (
     <div className={`glass-card rounded-2xl p-6 border-2 ${colorClasses[color]} card-hover`}>
-      <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center mb-6 shadow-lg">
+      <div className="w-14 h-14 bg-stone-50 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
         {icon}
       </div>
       <h3 className="text-xl font-bold text-gray-900 mb-3">{title}</h3>
@@ -174,7 +174,7 @@ const FeatureCard = ({ icon, title, description, features, color }) => {
         {features.map((feature) => (
           <span
             key={feature}
-            className="text-xs font-semibold bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full"
+            className="text-xs font-semibold bg-stone-100 text-gray-700 px-3 py-1.5 rounded-full"
           >
             {feature}
           </span>
@@ -187,8 +187,8 @@ const FeatureCard = ({ icon, title, description, features, color }) => {
 const StepCard = ({ number, title, description, icon }) => (
   <div className="relative">
     <div className="glass-card rounded-2xl p-6 text-center">
-      <div className="text-4xl font-bold text-primary-100 mb-4">{number}</div>
-      <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center mx-auto mb-4">
+      <div className="text-4xl font-bold text-agro-100 mb-4">{number}</div>
+      <div className="w-12 h-12 bg-agro-100 rounded-xl flex items-center justify-center mx-auto mb-4">
         {icon}
       </div>
       <h3 className="text-lg font-bold text-gray-900 mb-2">{title}</h3>

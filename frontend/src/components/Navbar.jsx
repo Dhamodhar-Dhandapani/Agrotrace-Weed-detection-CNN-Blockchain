@@ -104,24 +104,24 @@ const Navbar = ({ user, setUser }) => {
 
   return (
     <nav className={`fixed w-full z-50 transition-all duration-300 ${scrolled
-      ? 'bg-white/95 backdrop-blur-xl shadow-lg border-b border-gray-200'
-      : 'bg-white/90 backdrop-blur-md border-b border-gray-100'
+      ? 'bg-white/95 backdrop-blur-xl shadow-lg border-b border-stone-200'
+      : 'bg-white/90 backdrop-blur-md border-b border-stone-100'
       }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-3 group">
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-xl blur opacity-75 group-hover:opacity-100 transition-opacity" />
-              <div className="relative bg-gradient-to-r from-primary-600 to-secondary-600 p-2.5 rounded-xl group-hover:scale-105 transition-transform">
+              <div className="absolute inset-0 bg-gradient-to-r from-agro-500 to-secondary-500 rounded-xl blur opacity-75 group-hover:opacity-100 transition-opacity" />
+              <div className="relative bg-gradient-to-r from-agro-600 to-agro-700 p-2.5 rounded-xl group-hover:scale-105 transition-transform">
                 <Sprout size={24} className="text-white" />
               </div>
             </div>
             <div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
+              <span className="text-2xl font-bold bg-gradient-to-r from-agro-600 to-secondary-600 bg-clip-text text-transparent">
                 AgroTrace
               </span>
-              <div className="text-xs text-gray-500 font-medium">Blockchain Verified</div>
+              <div className="text-xs text-earth-500 font-medium">Blockchain Verified</div>
             </div>
           </Link>
 
@@ -157,11 +157,11 @@ const Navbar = ({ user, setUser }) => {
                 <div className="flex items-center space-x-2">
                   <Link
                     to="/profile"
-                    className="p-2 text-gray-500 hover:text-primary-600 hover:bg-gray-100 rounded-full transition-colors"
+                    className="p-2 text-gray-500 hover:text-agro-600 hover:bg-gray-100 rounded-full transition-colors"
                     title="Profile"
                   >
-                    <div className="flex items-center gap-2 text-sm font-medium text-gray-700 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-200">
-                      <User size={16} className="text-primary-600" />
+                    <div className="flex items-center gap-2 text-sm font-medium text-gray-700 bg-stone-50 px-3 py-1.5 rounded-full border border-stone-200">
+                      <User size={16} className="text-agro-600" />
                       <span>{user.username}</span>
                     </div>
                   </Link>
@@ -228,7 +228,7 @@ const Navbar = ({ user, setUser }) => {
                 <>
                   <Link to="/profile" onClick={() => setIsOpen(false)} className="w-full btn-secondary justify-start">
                     <div className="flex items-center gap-3 px-4 py-2 bg-gray-50 rounded-lg">
-                      <User size={20} className="text-primary-600" />
+                      <User size={20} className="text-agro-600" />
                       <span className="font-medium text-gray-900">{user.username}</span>
                       <span className="text-xs text-gray-500 ml-auto">{user.email}</span>
                     </div>
@@ -265,8 +265,8 @@ const NavLink = ({ to, icon, text, currentPath }) => {
     <Link
       to={to}
       className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm font-medium ${isActive
-        ? 'bg-gradient-to-r from-primary-50 to-secondary-50 text-primary-700 border border-primary-100'
-        : 'text-gray-600 hover:text-primary-600 hover:bg-gray-50'
+        ? 'bg-gradient-to-r from-agro-50 to-secondary-50 text-agro-700 border border-agro-100'
+        : 'text-gray-600 hover:text-agro-600 hover:bg-stone-50'
         }`}
     >
       {icon}
@@ -284,11 +284,11 @@ const MobileNavLink = ({ to, text, icon, onClick }) => {
       to={to}
       onClick={onClick}
       className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${isActive
-        ? 'bg-primary-50 text-primary-700'
-        : 'text-gray-600 hover:bg-gray-50'
+        ? 'bg-agro-50 text-agro-700'
+        : 'text-gray-600 hover:bg-stone-50'
         }`}
     >
-      <div className={`p-2 rounded-lg ${isActive ? 'bg-primary-100' : 'bg-gray-100'}`}>
+      <div className={`p-2 rounded-lg ${isActive ? 'bg-agro-100' : 'bg-stone-100'}`}>
         {icon}
       </div>
       <span className="font-medium">{text}</span>

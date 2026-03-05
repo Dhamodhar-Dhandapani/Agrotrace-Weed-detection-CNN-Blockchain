@@ -32,8 +32,8 @@ const Profile = ({ user }) => {
 
                 <div className="glass-card rounded-2xl p-8">
                     <div className="flex items-center gap-6 mb-8">
-                        <div className="w-24 h-24 bg-primary-100 rounded-full flex items-center justify-center">
-                            <User className="text-primary-600 w-12 h-12" />
+                        <div className="w-24 h-24 bg-agro-100 rounded-full flex items-center justify-center">
+                            <User className="text-agro-600 w-12 h-12" />
                         </div>
                         <div>
                             <h2 className="text-2xl font-bold text-gray-900">{profileData?.username || user.username}</h2>

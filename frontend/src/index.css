@@ -16,27 +16,49 @@
   --color-agro-900: #184835;
   --color-agro-950: #0c281e;
 
-  --color-primary-50: #f0f9ff;
-  --color-primary-100: #e0f2fe;
-  --color-primary-200: #bae6fd;
-  --color-primary-300: #7dd3fc;
-  --color-primary-400: #38bdf8;
-  --color-primary-500: #0ea5e9;
-  --color-primary-600: #0284c7;
-  --color-primary-700: #0369a1;
-  --color-primary-800: #075985;
-  --color-primary-900: #0c4a6e;
+  --color-primary-50: #f0fdf4;
+  --color-primary-100: #dcfce7;
+  --color-primary-200: #bbf7d0;
+  --color-primary-300: #86efac;
+  --color-primary-400: #4ade80;
+  --color-primary-500: #22c55e;
+  --color-primary-600: #16a34a;
+  --color-primary-700: #15803d;
+  --color-primary-800: #166534;
+  --color-primary-900: #14532d;
 
-  --color-secondary-50: #fdf2f8;
-  --color-secondary-100: #fce7f3;
-  --color-secondary-200: #fbcfe8;
-  --color-secondary-300: #f9a8d4;
-  --color-secondary-400: #f472b6;
-  --color-secondary-500: #ec4899;
-  --color-secondary-600: #db2777;
-  --color-secondary-700: #be185d;
-  --color-secondary-800: #9d174d;
-  --color-secondary-900: #831843;
+  --color-secondary-50: #fffbeb;
+  --color-secondary-100: #fef3c7;
+  --color-secondary-200: #fde68a;
+  --color-secondary-300: #fcd34d;
+  --color-secondary-400: #fbbf24;
+  --color-secondary-500: #f59e0b;
+  --color-secondary-600: #d97706;
+  --color-secondary-700: #b45309;
+  --color-secondary-800: #92400e;
+  --color-secondary-900: #78350f;
+
+  --color-harvest-50: #fefce8;
+  --color-harvest-100: #fef9c3;
+  --color-harvest-200: #fef08a;
+  --color-harvest-300: #fde047;
+  --color-harvest-400: #facc15;
+  --color-harvest-500: #eab308;
+  --color-harvest-600: #ca8a04;
+  --color-harvest-700: #a16207;
+  --color-harvest-800: #854d0e;
+  --color-harvest-900: #713f12;
+
+  --color-earth-50: #faf6f1;
+  --color-earth-100: #f3ebe0;
+  --color-earth-200: #e6d5bf;
+  --color-earth-300: #d4b896;
+  --color-earth-400: #c49a6e;
+  --color-earth-500: #b07d4f;
+  --color-earth-600: #9a6640;
+  --color-earth-700: #7d4f35;
+  --color-earth-800: #654030;
+  --color-earth-900: #4a3528;
 }
 
 
@@ -49,20 +71,20 @@
 
 @layer base {
   :root {
-    --color-primary-50: #f0f9ff;
-    --color-primary-100: #e0f2fe;
-    --color-primary-200: #bae6fd;
-    --color-primary-300: #7dd3fc;
-    --color-primary-400: #38bdf8;
-    --color-primary-500: #0ea5e9;
-    --color-primary-600: #0284c7;
-    --color-primary-700: #0369a1;
-    --color-primary-800: #075985;
-    --color-primary-900: #0c4a6e;
+    --color-primary-50: #f0fdf4;
+    --color-primary-100: #dcfce7;
+    --color-primary-200: #bbf7d0;
+    --color-primary-300: #86efac;
+    --color-primary-400: #4ade80;
+    --color-primary-500: #22c55e;
+    --color-primary-600: #16a34a;
+    --color-primary-700: #15803d;
+    --color-primary-800: #166534;
+    --color-primary-900: #14532d;
   }
 
   body {
-    @apply antialiased text-gray-900 bg-gray-50;
+    @apply antialiased text-gray-900 bg-stone-50;
   }
 
   /* Custom scrollbar for webkit browsers */
@@ -72,7 +94,7 @@
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-gray-100;
+    @apply bg-stone-100;
   }
 
   ::-webkit-scrollbar-thumb {
@@ -86,7 +108,7 @@
 
 @layer components {
   .glass-card {
-    @apply bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg;
+    @apply bg-white/85 backdrop-blur-sm border border-stone-200/60 shadow-lg;
   }
 
   .glass-card-dark {
@@ -94,19 +116,19 @@
   }
 
   .gradient-bg {
-    @apply bg-gradient-to-br from-primary-50 via-white to-secondary-50;
+    @apply bg-gradient-to-br from-green-50 via-stone-50 to-secondary-50;
   }
 
   .gradient-bg-dark {
-    @apply bg-gradient-to-br from-gray-900 via-gray-800 to-primary-900;
+    @apply bg-gradient-to-br from-gray-900 via-agro-950 to-earth-900;
   }
 
   .gradient-text {
-    @apply bg-gradient-to-r from-agro-600 to-primary-600 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-agro-600 to-secondary-600 bg-clip-text text-transparent;
   }
 
   .gradient-text-dark {
-    @apply bg-gradient-to-r from-agro-400 to-primary-400 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-agro-400 to-secondary-400 bg-clip-text text-transparent;
   }
 
   .btn-primary {
@@ -114,7 +136,7 @@
   }
 
   .btn-secondary {
-    @apply px-6 py-3 bg-white text-gray-700 font-semibold rounded-xl border border-gray-200 hover:border-agro-200 hover:bg-agro-50 transition-all duration-300 shadow-sm active:scale-[0.98] flex items-center justify-center gap-2;
+    @apply px-6 py-3 bg-white text-gray-700 font-semibold rounded-xl border border-stone-200 hover:border-secondary-300 hover:bg-secondary-50 transition-all duration-300 shadow-sm active:scale-[0.98] flex items-center justify-center gap-2;
   }
 
   .btn-outline {
@@ -122,7 +144,7 @@
   }
 
   .input-field {
-    @apply w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-agro-500/20 focus:border-agro-500 outline-none transition-all duration-200 placeholder-gray-400 text-gray-700 font-medium;
+    @apply w-full px-4 py-3 rounded-xl border border-stone-200 bg-white focus:ring-2 focus:ring-agro-500/20 focus:border-agro-500 outline-none transition-all duration-200 placeholder-gray-400 text-gray-700 font-medium;
   }
 
   .input-field-dark {
@@ -134,7 +156,7 @@
   }
 
   .stat-card {
-    @apply bg-gradient-to-br from-white to-gray-50 rounded-2xl border border-gray-100 p-6 shadow-lg;
+    @apply bg-gradient-to-br from-white to-stone-50 rounded-2xl border border-stone-100 p-6 shadow-lg;
   }
 
   .stat-card-dark {
@@ -229,7 +251,7 @@
 
 /* Loading skeleton */
 .skeleton {
-  @apply bg-gray-200 animate-pulse rounded;
+  @apply bg-stone-200 animate-pulse rounded;
 }
 
 /* Selection color */
