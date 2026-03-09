@@ -65,7 +65,9 @@ const WeedDetector = () => {
                     ...prev,
                     weed_count: stats.weed_count,
                     frames_analyzed: stats.frames_processed,
-                    processing_status: stats.status
+                    processing_status: stats.status,
+                    confidence: stats.avg_confidence || 0,
+                    max_confidence: stats.max_confidence || 0
                   };
                 });
 
@@ -78,6 +80,8 @@ const WeedDetector = () => {
                     weed_count: stats.weed_count,
                     frames_analyzed: stats.frames_processed,
                     processing_status: 'completed',
+                    confidence: stats.avg_confidence || 0,
+                    max_confidence: stats.max_confidence || 0,
                     processed_video_url: null, // Hides player, shows upload box
                     completion_message: "Processing Complete! Results saved to database."
                   }));

@@ -49,7 +49,7 @@ def video_status(filename):
             record = Detection.query.get(detection_id)
             if record:
                 record.weed_count = stats["weed_count"]
-                record.confidence = 0.85 # Set a default high confidence for successful tracking
+                record.confidence = stats.get("avg_confidence", 0.0)
                 db.session.commit()
                 stats["db_saved"] = True
                 print(f"[INFO] Polling Poller updated Detection {detection_id} in DB.")

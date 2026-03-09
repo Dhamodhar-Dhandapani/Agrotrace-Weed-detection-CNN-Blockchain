@@ -207,6 +207,7 @@ def generate_video_frames(video_path, method="Manual", herbicide=None, filename=
 
     frame_count = 0
     last_results = []
+    all_confidences = []  # Track all confidence scores across frames
     
     # Initialize stats
     VIDEO_STATS[filename] = {
@@ -214,6 +215,8 @@ def generate_video_frames(video_path, method="Manual", herbicide=None, filename=
         "total_frames": total_frames,
         "weed_count": 0,
         "cumulative_weeds": 0,
+        "avg_confidence": 0.0,
+        "max_confidence": 0.0,
         "status": "processing",
         "detection_id": detection_id, # Store for polling update
         "db_saved": False
@@ -248,6 +251,11 @@ def generate_video_frames(video_path, method="Manual", herbicide=None, filename=
                         ids = last_results[0].boxes.id.int().cpu().tolist()
                         for obj_id in ids:
                             seen_ids.add(obj_id)
+                    
+                    # Extract confidence scores from this frame
+                    if last_results and last_results[0].boxes and len(last_results[0].boxes) > 0:
+                        frame_confs = last_results[0].boxes.conf.cpu().tolist()
+                        all_confidences.extend(frame_confs)
                 except Exception as track_err:
                     print(f"[WARN] Tracking error at frame {frame_count}: {track_err}")
             
@@ -258,6 +266,9 @@ def generate_video_frames(video_path, method="Manual", herbicide=None, filename=
             VIDEO_STATS[filename]["frames_processed"] = frame_count
             VIDEO_STATS[filename]["weed_count"] = len(seen_ids) # Unique Count
             VIDEO_STATS[filename]["cumulative_weeds"] = len(seen_ids) # Same as above
+            if all_confidences:
+                VIDEO_STATS[filename]["avg_confidence"] = round(sum(all_confidences) / len(all_confidences), 4)
+                VIDEO_STATS[filename]["max_confidence"] = round(max(all_confidences), 4)
             VIDEO_STATS[filename]["status"] = "processing"
             
             # Add "Status" text to video
@@ -276,7 +287,8 @@ def generate_video_frames(video_path, method="Manual", herbicide=None, filename=
 
         # Mark as completed when loop finishes naturally
         VIDEO_STATS[filename]["status"] = "completed"
-        print(f"[INFO] Video processing completed. Final unique count: {len(seen_ids)}")
+        final_conf = VIDEO_STATS[filename].get("avg_confidence", 0.0)
+        print(f"[INFO] Video processing completed. Final unique count: {len(seen_ids)}, Avg confidence: {final_conf}")
 
 
     except Exception as e:
