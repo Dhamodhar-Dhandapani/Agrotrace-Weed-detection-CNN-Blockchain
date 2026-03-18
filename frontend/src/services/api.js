@@ -32,9 +32,16 @@ export const getHistory = (landId) => api.get(`/detect/history/${landId}`);
 export const storeOnChain = (data) => api.post('/blockchain/store', data);
 export const verifyExternalTransaction = (id, txHash) => api.post('/blockchain/verify-external', { id, tx_hash: txHash });
 
+// Location API
+export const verifyLocation = (location) =>
+api.get(`/location/verify?location=${encodeURIComponent(location)}`);
+
 export const runAutonomousSimulation = (formData) => api.post('/detection/autonomous-simulation', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
 });
+
+export const suggestLocation = (query) =>
+  api.get(`/location/suggest?q=${encodeURIComponent(query)}`);
 
 // New User Centric APIs
 export const getUserProfile = (userId) => api.get(`/auth/profile/${userId}`);
